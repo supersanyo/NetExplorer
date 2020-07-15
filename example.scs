@@ -1,0 +1,32 @@
+subckt inv a z vdd vss
+    M0 (z a vdd vdd) pmos l=100n w=200n multi=1
+    M1 (z a vss vss) nmos l=100n w=100n multi=1
+ends inv
+
+subckt nand2 a b z vdd vss
+    M0 (z a vdd vdd) pmos l=100n w=200n multi=1
+    M1 (z b vdd vdd) pmos l=100n w=200n multi=1
+    M2 (z a net01 vss) nmos l=100n w=200n multi=1
+    M3 (net01 b vss vss) nmos l=100n w=200n multi=1
+ends nand2
+
+subckt nor2 a b z vdd vss
+    M0 (net01 a vdd vdd) pmos l=100n w=400n multi=1
+    M1 (z b net01 vdd) pmos l=100n w=400n multi=1
+    M2 (z a vss vss) nmos l=100n w=100n multi=1
+    M3 (z b vss vss) nmos l=100n w=100n multi=1
+ends nor2
+
+subckt and2 a b z vdd vss
+    I0 (a b zn vdd vss) nand2
+    I1 (zn z vdd vss) inv
+ends
+
+I0 (a b net01 vdd vss) and2
+I1 (net01 c net02 vdd vss) nor2
+I2 (net02 out vdd vss) inv
+
+
+V0 (a 0) vsource dc=1 type=dc
+V1 (b 0) vsource dc=1 type=dc
+V2 (c 0) vsource dc=1 type=dc
