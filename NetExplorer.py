@@ -69,7 +69,7 @@ def parse_instance(line, netlist):
                     temp_pin += line[i]
                     i += 1
                 assert line[i] == ')'
-                pins = re.split("\s+", temp_pin)
+                pins = re.split("\s+", temp_pin.strip())
             elif state == 2:
                 subckt_name += line[i]
             else:
@@ -80,9 +80,9 @@ def parse_instance(line, netlist):
    
     # Create a new instance
     inst = Instance()
-    inst.instance_name = instance_name
-    inst.subckt_name = subckt_name
-    inst.pins = pins
+    inst.instance_name = escape_replace(instance_name)
+    inst.subckt_name = escape_replace(subckt_name)
+    inst.pins = list(map(escape_replace, pins))
     inst.parameters = None if len(param_text) < 1 else parse_param(param_text)
 
     # Add instance to subckt
@@ -97,14 +97,17 @@ def parse_instance(line, netlist):
         else:
             nets[p] = [(inst, i)]
 
+def escape_replace(name):
+    return name.replace('\\','')
+
 def parse_line(line, netlist):
     items = line.split(' ', 1)
     header = items[0]
     
     if header == 'subckt':
         items = re.split("\s+", items[1].strip())
-        subckt = Subckt(items[0])
-        subckt.pins = items[1:]
+        subckt = Subckt(escape_replace(items[0]))
+        subckt.pins = list(map(escape_replace, items[1:]))
 
         netlist.context_stack.append(subckt)
         netlist.subckts[subckt.name] = subckt
@@ -119,7 +122,7 @@ def parse_line(line, netlist):
     else:
         parse_instance(line, netlist)
 
-def parse(filename):
+def parse(filename, logger):
     """
     Input (string) : file name to be parsed
     Output (Netlist) : Netlist object with parsed information
@@ -128,7 +131,7 @@ def parse(filename):
     lines = fin.readlines()
     fin.close()
 
-    res = Netlist(filename)
+    res = Netlist(filename, logger)
     # Traverse every lines
     i = 0
     while i < len(lines):

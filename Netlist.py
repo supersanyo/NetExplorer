@@ -1,6 +1,6 @@
-
 class Netlist:
-    def __init__(self, name):
+    def __init__(self, name, logger):
+        self.logger = logger
         self.name = name
         self.root = Subckt(name)
         self.subckts = {}
@@ -23,14 +23,15 @@ class Netlist:
 
     """
     def trace_signal(self, signal_name, subckt_name='root'):
-        if subckt_name == 'root':
+        if subckt_name == 'root' or subckt_name == self.root.name:
             subckt = self.root
         else:
             try:
                 subckt = self.subckts[subckt_name]
             except:
-                print("Subckt %s not found in this netlist" % subckt_name)
+                self.logger.emit("Subckt %s not found in this netlist" % subckt_name)
                 return None
+        self.logger.emit("Signal Name, Instance Name, Instance Subckt Name")
         self.__trace_signal(signal_name, subckt, 0)
         return
 
@@ -40,7 +41,7 @@ class Netlist:
                 indent = ''
                 for x in range(depth):
                     indent+='--'
-                print("%s %s %s %s" % ( indent, signal_name, inst.instance_name, inst.subckt_name))
+                self.logger.emit("%s %s, %s, %s" % ( indent, signal_name, inst.instance_name, inst.subckt_name))
 
                 if inst.subckt_name in self.subckts:
                     sc = self.subckts[inst.subckt_name]
@@ -56,13 +57,13 @@ class Netlist:
     """
 
     def signal_consistency(self, subckt_name='root'):
-        if subckt_name == 'root':
+        if subckt_name == 'root' or subckt_name == self.root.name:
             subckt = self.root
         else:
             try:
                 subckt = self.subckts[subckt_name]
             except:
-                print("Subckt %s not found in this netlist" % subckt_name)
+                self.logger.emit("Subckt %s not found in this netlist" % subckt_name)
                 return None
         for inst in subckt.instances:
             inst_pins = inst.pins
@@ -75,10 +76,10 @@ class Netlist:
                     if inst_pins[i] != subckt_pins[i]:
                         errors.append((inst_pins[i], subckt_pins[i]))
                 if len(errors) > 0:
-                    print()
-                    print("=== %s vs %s ===" % (inst.instance_name, inst.subckt_name))
+                    self.logger.emit('')
+                    self.logger.emit("=== %s vs %s ===" % (inst.instance_name, inst.subckt_name))
                     for e in errors:
-                        print("%s vs %s" % e)
+                        self.logger.emit("%s vs %s" % e)
 
     """
         Subckt Usage Check
@@ -95,7 +96,7 @@ class Netlist:
     def _subckt_usage(self, subckt_name, inst, stack):
         if inst.subckt_name == subckt_name:
             stack.append(inst.instance_name)
-            print(".".join(stack))
+            self.logger.emit(".".join(stack))
             stack.pop()
             return
 
@@ -123,6 +124,10 @@ class Subckt:
         ret += "# of Nets: %d\n" % len(self.nets)
         ret += "# of Instances: %d\n" % len(self.instances)
         ret += "# of Parameters: %d\n" % (len(self.parameters) if self.parameters else 0)
+        if self.parameters and len(self.parameters) > 0:
+            ret += "Parameters: \n"
+            for p in self.parameters:
+                ret += "%s : %s\n" % (p, self.parameters[p])
         ret += "===== End Summary =====\n"
         return ret
 
@@ -140,5 +145,9 @@ class Instance:
         ret += "Subckt Name: %s\n" % self.subckt_name
         ret += "Subckt Pin Order: %s\n" % self.pins
         ret += "# of Parameters: %d\n" % (len(self.parameters) if self.parameters else 0)
+        if self.parameters and len(self.parameters) > 0:
+            ret += "Parameters: \n"
+            for p in self.parameters:
+                ret += "%s : %s\n" % (p, self.parameters[p])
         ret += "===== End Summary =====\n"
         return ret

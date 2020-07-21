@@ -1,5 +1,10 @@
 import NetExplorer
-netlist = NetExplorer.parse("example.scs")
+class Logger:
+    def emit(self, txt):
+        print(txt)
+logger = Logger()
+#netlist = NetExplorer.parse('netlist.scs')
+netlist = NetExplorer.parse("example.scs", logger)
 print(netlist.str())
 
 print()
