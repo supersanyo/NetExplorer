@@ -37,10 +37,18 @@ V0 (a 0) vsource dc=1 type=dc
 V1 (b 0) vsource dc=1 type=dc
 V2 (c 0) vsource dc=1 type=dc
 ```
+### GUI Mode
+Execute `python3 NetExplorerGUI.py` and open the spectre netlist file
+Right click on the items on the tree view on the left side for comprehensive features to be displayed in the log output on the right side.
+
 ### Sample python script
 ```python
 import NetExplorer
-netlist = NetExplorer.parse("example.scs")
+class Logger:
+    def emit(self, txt):
+        print(txt)
+logger = Logger()
+netlist = NetExplorer.parse("example.scs", logger)
 print(netlist.str())
 
 print()
